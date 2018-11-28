@@ -1,6 +1,14 @@
 from sys import stderr
 import time
 
+def is_mounted(adb, dev, node):
+    for l in adb.check_output(('shell','mount')).splitlines():
+        f = l.split()
+        if dev in f[0] and node in f[2]:
+            return True
+        else:
+            return False
+
 def find_mount(adb, dev, node):
     for l in adb.check_output(('shell','mount')).splitlines():
         f = l.split()
@@ -28,11 +36,13 @@ def really_mount(adb, dev, node, mode='ro'):
     return mtype
 
 def really_umount(adb, dev, node):
-    for opts in ('','-f','-l','-r'):
-        if adb.check_output(('shell','umount %s 2>/dev/null && echo ok' % dev)).strip():
-            break
-        if adb.check_output(('shell','umount %s 2>/dev/null && echo ok' % node)).strip():
-            break
+    if is_mounted(adb, dev, node):
+        for opts in ('','-f','-l','-r'):
+            if adb.check_output(('shell','umount %s 2>/dev/null && echo ok' % dev)).strip():
+                break
+            if adb.check_output(('shell','umount %s 2>/dev/null && echo ok' % node)).strip():
+                break
+
     mdev, mnode, mtype = find_mount(adb, dev, node)
     return (mtype==None)
 
